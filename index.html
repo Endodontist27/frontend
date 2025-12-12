@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;">
+    <title>SundAI - Dental Practice Management</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Top Navigation -->
+        <header class="top-nav">
+            <div class="logo">
+                <img src="logo.svg" alt="SundAI Logo" class="logo-icon">
+                <span class="logo-text">SundAI</span>
+            </div>
+            <div class="search-container">
+                <input type="text" id="search-input" placeholder="Search patients..." autocomplete="off">
+                <div id="search-results" class="search-dropdown"></div>
+            </div>
+            <div class="nav-actions">
+                <button id="backup-btn" class="btn-icon" title="Backup Data">💾</button>
+                <span id="connection-status" class="status-dot connected" title="Database Connected"></span>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <div class="main-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <button class="nav-item active" data-view="dashboard">
+                        <span class="nav-icon">📊</span>
+                        <span class="nav-label">Dashboard</span>
+                    </button>
+                    <button class="nav-item" data-view="patients">
+                        <span class="nav-icon">👥</span>
+                        <span class="nav-label">Patients</span>
+                    </button>
+                    <button class="nav-item" data-view="appointments">
+                        <span class="nav-icon">📅</span>
+                        <span class="nav-label">Appointments</span>
+                    </button>
+                    <button class="nav-item" data-view="deadlines">
+                        <span class="nav-icon">⏰</span>
+                        <span class="nav-label">Deadlines</span>
+                    </button>
+                    <button class="nav-item" data-view="inventory">
+                        <span class="nav-icon">📦</span>
+                        <span class="nav-label">Inventory</span>
+                    </button>
+                    <button class="nav-item" data-view="chat">
+                        <span class="nav-icon">🤖</span>
+                        <span class="nav-label">AI Chat</span>
+                    </button>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="content">
+                <!-- Dashboard View -->
+                <section id="dashboard-view" class="view active">
+                    <div class="view-header">
+                        <h1>Dashboard</h1>
+                        <div class="header-actions">
+                            <button id="add-patient-btn" class="btn btn-primary">+ Add Patient</button>
+                            <button id="add-appointment-btn" class="btn btn-secondary">+ Appointment</button>
+                            <button id="add-deadline-btn" class="btn btn-secondary">+ Deadline</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Stats Cards -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="total-patients">0</span>
+                                <span class="stat-label">Total Patients</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">📅</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="today-appointments">0</span>
+                                <span class="stat-label">Today's Appointments</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⏰</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="pending-deadlines">0</span>
+                                <span class="stat-label">Pending Deadlines</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-info">
+                                <span class="stat-value" id="low-stock">0</span>
+                                <span class="stat-label">Low Stock Items</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calendar Section -->
+                    <div class="dashboard-grid">
+                        <div class="calendar-section">
+                            <div class="calendar-header">
+                                <button id="prev-month" class="btn-icon">◀</button>
+                                <h2 id="calendar-month-year">December 2025</h2>
+                                <button id="next-month" class="btn-icon">▶</button>
+                            </div>
+                            <div class="calendar-grid">
+                                <div class="calendar-weekdays">
+                                    <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+                                </div>
+                                <div id="calendar-days" class="calendar-days"></div>
+                            </div>
+                        </div>
+
+                        <!-- Schedule Panel (Today or Selected Date) -->
+                        <div class="today-section">
+                            <div class="schedule-header">
+                                <h2 id="schedule-title">Today's Schedule</h2>
+                                <button id="back-to-today-btn" class="btn btn-sm btn-secondary" style="display: none;">Back to Today</button>
+                            </div>
+                            <div id="schedule-content">
+                                <div id="schedule-appointments">
+                                    <h3>📅 Appointments</h3>
+                                    <div id="appointments-list" class="schedule-list">
+                                        <p class="empty-state">No appointments</p>
+                                    </div>
+                                </div>
+                                <div id="schedule-deadlines">
+                                    <h3>⏰ Deadlines</h3>
+                                    <div id="deadlines-list" class="schedule-list">
+                                        <p class="empty-state">No deadlines</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="schedule-actions">
+                                <button id="add-appointment-for-date" class="btn btn-sm btn-primary">+ Appointment</button>
+                                <button id="add-deadline-for-date" class="btn btn-sm btn-secondary">+ Deadline</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Patients View -->
+                <section id="patients-view" class="view">
+                    <div class="view-header">
+                        <h1>Patients</h1>
+                        <button id="add-patient-btn-2" class="btn btn-primary">+ Add Patient</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Name</th>
+                                    <th>Date of Birth</th>
+                                    <th>Phone</th>
+                                    <th>Last Visit</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="patients-table-body">
+                                <tr><td colspan="6" class="empty-state">Loading patients...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Appointments View -->
+                <section id="appointments-view" class="view">
+                    <div class="view-header">
+                        <h1>Appointments</h1>
+                        <button id="add-appointment-btn-2" class="btn btn-primary">+ New Appointment</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Time</th>
+                                    <th>Patient</th>
+                                    <th>Type</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appointments-table-body">
+                                <tr><td colspan="6" class="empty-state">Loading appointments...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Deadlines View -->
+                <section id="deadlines-view" class="view">
+                    <div class="view-header">
+                        <h1>Deadlines</h1>
+                        <button id="add-deadline-btn-2" class="btn btn-primary">+ New Deadline</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Priority</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deadlines-table-body">
+                                <tr><td colspan="5" class="empty-state">Loading deadlines...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Inventory View -->
+                <section id="inventory-view" class="view">
+                    <div class="view-header">
+                        <h1>Inventory</h1>
+                        <button id="add-inventory-btn" class="btn btn-primary">+ Add Item</button>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Category</th>
+                                    <th>Quantity</th>
+                                    <th>Min Stock</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inventory-table-body">
+                                <tr><td colspan="6" class="empty-state">Loading inventory...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Chat View -->
+                <section id="chat-view" class="view">
+                    <div class="view-header">
+                        <h1>AI Assistant</h1>
+                        <div class="header-controls">
+                            <div class="ai-mode-selector">
+                                <label for="ai-mode-select">Mode:</label>
+                                <select id="ai-mode-select" class="ai-mode-toggle">
+                                    <option value="mcp">MCP Chatbot</option>
+                                    <option value="rag">RAG Agent</option>
+                                </select>
+                            </div>
+                            <div class="mic-selector">
+                                <label for="mic-select">🎤 Microphone:</label>
+                                <select id="mic-select">
+                                    <option value="">Loading...</option>
+                                </select>
+                                <button id="test-mic-btn" class="btn btn-sm btn-secondary" title="Test microphone">Test</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="chat-container">
+                        <div id="chat-messages" class="chat-messages">
+                            <div class="chat-message assistant">
+                                <p>Hello! I'm your AI dental assistant. How can I help you today?</p>
+                            </div>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="chat-input" placeholder="Type a message or use voice..." autocomplete="off">
+                            <button id="voice-btn" class="btn-icon" title="Voice Input">🎤</button>
+                            <button id="send-btn" class="btn btn-primary">Send</button>
+                        </div>
+                        <div id="audio-level" class="audio-level-container">
+                            <div id="audio-level-bar" class="audio-level-bar"></div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay">
+        <!-- Add Patient Modal -->
+        <div id="patient-modal" class="modal">
+            <div class="modal-header">
+                <h2 id="patient-modal-title">Add New Patient</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="patient-form" class="modal-body">
+                <div class="form-group">
+                    <label for="patient-name">Full Name *</label>
+                    <input type="text" id="patient-name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="patient-dob">Date of Birth *</label>
+                        <input type="date" id="patient-dob" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="patient-phone">Phone</label>
+                        <input type="tel" id="patient-phone">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="patient-email">Email</label>
+                    <input type="email" id="patient-email">
+                </div>
+                <div class="form-group">
+                    <label for="patient-address">Address</label>
+                    <textarea id="patient-address" rows="2"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Patient</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Add Appointment Modal -->
+        <div id="appointment-modal" class="modal">
+            <div class="modal-header">
+                <h2 id="appointment-modal-title">New Appointment</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="appointment-form" class="modal-body">
+                <div class="form-group">
+                    <label for="appointment-patient">Patient *</label>
+                    <input type="text" id="appointment-patient" placeholder="Search patient..." required>
+                    <input type="hidden" id="appointment-patient-id">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="appointment-date">Date *</label>
+                        <input type="date" id="appointment-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-time">Time *</label>
+                        <input type="time" id="appointment-time" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="appointment-type">Type</label>
+                        <select id="appointment-type">
+                            <option value="checkup">Check-up</option>
+                            <option value="cleaning">Cleaning</option>
+                            <option value="treatment">Treatment</option>
+                            <option value="surgery">Surgery</option>
+                            <option value="emergency">Emergency</option>
+                            <option value="consultation">Consultation</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="appointment-duration">Duration (min)</label>
+                        <input type="number" id="appointment-duration" value="30" min="15" step="15">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="appointment-notes">Notes</label>
+                    <textarea id="appointment-notes" rows="2"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Appointment</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Add Deadline Modal -->
+        <div id="deadline-modal" class="modal">
+            <div class="modal-header">
+                <h2 id="deadline-modal-title">New Deadline</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="deadline-form" class="modal-body">
+                <div class="form-group">
+                    <label for="deadline-title">Title *</label>
+                    <input type="text" id="deadline-title" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="deadline-date">Due Date *</label>
+                        <input type="date" id="deadline-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="deadline-priority">Priority</label>
+                        <select id="deadline-priority">
+                            <option value="low">Low</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="high">High</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="deadline-description">Description</label>
+                    <textarea id="deadline-description" rows="3"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Deadline</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Add Inventory Modal -->
+        <div id="inventory-modal" class="modal">
+            <div class="modal-header">
+                <h2 id="inventory-modal-title">Add Inventory Item</h2>
+                <button class="modal-close">&times;</button>
+            </div>
+            <form id="inventory-form" class="modal-body">
+                <div class="form-group">
+                    <label for="inventory-name">Item Name *</label>
+                    <input type="text" id="inventory-name" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inventory-category">Category</label>
+                        <select id="inventory-category">
+                            <option value="consumables">Consumables</option>
+                            <option value="instruments">Instruments</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="medication">Medication</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="inventory-quantity">Quantity *</label>
+                        <input type="number" id="inventory-quantity" required min="0">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="inventory-min-stock">Min Stock Level</label>
+                        <input type="number" id="inventory-min-stock" value="10" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="inventory-unit">Unit</label>
+                        <input type="text" id="inventory-unit" placeholder="e.g., pcs, boxes">
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary modal-cancel">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
